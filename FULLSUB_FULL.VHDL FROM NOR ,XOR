@@ -1,0 +1,353 @@
+for full subtractor 
+dut.vhdl
+-- A DUT entity is used to wrap your design so that we can combine it with testbench.
+-- This example shows how you can do this for the OR Gate
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity DUT is
+    port(input_vector: in std_logic_vector(2 downto 0);
+       	output_vector: out std_logic_vector(1 downto 0));
+end entity;
+
+architecture DutWrap of DUT is
+   component nor_full is
+     port(a, b, bin: in std_logic;
+         diff, bout: out std_logic);
+   end component;
+begin
+
+   -- input/output vector element ordering is critical,
+   -- and must match the ordering in the trace file!
+   add_instance: nor_full
+			port map (
+					-- order of inputs b a
+					a => input_vector(2),
+					b => input_vector(1),
+					bin => input_vector(0),
+               -- order of output OUTPUT
+					diff => output_vector(1),
+					bout => output_vector(0)
+					);
+end DutWrap;
+
+
+NOR_FULL.vhdl
+library ieee;
+use ieee.std_logic_1164.all;
+library work;
+use work.Gates.all;
+entity nor_full is
+port(a,b,bin : in std_logic; diff,bout:out std_logic );
+end nor_full;
+architecture struct of nor_full is
+component nor_xor is
+port(a,b: in std_logic; output:out std_logic);
+end component;
+signal s1,s2,s3,s4,s5,s6 : std_logic;
+Begin
+g1: nor_xor port map ( a, b, s1 );
+g2: nor_xor port map ( s1, bin,diff );
+g3: NOR_2 port map ( b, b, s2);
+g4: NOR_2 port map ( a, s2, s3 );
+g5: NOR_2 port map ( bin, bin, s4);
+g6:NOR_2 port map ( s4, s1, s5 );
+g7:Nor_2 port map ( s3, s5, s6 );
+g8:NOR_2 port map ( s6,s6,bout);
+end struct;
+
+gates.vhdl
+--These declarations can then be imported into other design units using a use clause.
+
+package Gates is
+  component INVERTER is
+   port (A: in std_logic; Y: out std_logic);
+  end component INVERTER;
+
+  component AND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component AND_2;
+
+  component NAND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component NAND_2;
+
+  component OR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component OR_2;
+
+  component NOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component NOR_2;
+
+  component XOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component XOR_2;
+
+  component XNOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+  end component XNOR_2;
+
+  component HALF_ADDER is
+   port (A, B: in std_logic; S, C: out std_logic);
+  end component HALF_ADDER;
+
+end package Gates;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity INVERTER is
+   port (A: in std_logic; Y: out std_logic);
+end entity INVERTER;
+
+architecture Equations of INVERTER is
+begin
+   Y <= not A;
+end Equations;
+  
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity AND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity AND_2;
+
+architecture Equations of AND_2 is
+begin
+   Y <= A and B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity NAND_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity NAND_2;
+
+architecture Equations of NAND_2 is
+begin
+   Y <= not (A and B);
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity OR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity OR_2;
+
+architecture Equations of OR_2 is
+begin
+   Y <= A or B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity NOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity NOR_2;
+
+architecture Equations of NOR_2 is
+begin
+   Y <= not (A or B);
+end Equations;
+  
+
+library ieee;
+use ieee.std_logic_1164.all;
+entity XOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity XOR_2;
+
+architecture Equations of XOR_2 is
+begin
+   Y <= A xor B;
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity XNOR_2 is
+   port (A, B: in std_logic; Y: out std_logic);
+end entity XNOR_2;
+
+architecture Equations of XNOR_2 is
+begin
+   Y <= not (A xor B);
+end Equations;
+  
+library ieee;
+use ieee.std_logic_1164.all;
+entity HALF_ADDER is
+   port (A, B: in std_logic; S, C: out std_logic);
+end entity HALF_ADDER;
+
+architecture Equations of HALF_ADDER is
+begin
+   S <= (A xor B);
+   C <= (A and B);
+end Equations;
+
+
+testbench.vhdl
+library std;
+use std.textio.all;
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity Testbench is
+end entity;
+architecture Behave of Testbench is
+
+  ----------------------------------------------------------------
+  --  edit the following lines to set the number of i/o's of your
+  --  DUT.
+  ----------------------------------------------------------------
+  constant number_of_inputs  : integer := 3;  -- # input bits to your design.
+  constant number_of_outputs : integer := 2;  -- # output bits from your design.
+  ----------------------------------------------------------------
+  ----------------------------------------------------------------
+
+  -- Note that you will have to wrap your design into the DUT
+  -- as indicated in class.
+  component DUT is
+   port(input_vector: in std_logic_vector(number_of_inputs-1 downto 0);    
+       	output_vector: out std_logic_vector(number_of_outputs-1 downto 0));
+  end component;
+
+
+  signal input_vector  : std_logic_vector(number_of_inputs-1 downto 0);
+  signal output_vector : std_logic_vector(number_of_outputs-1 downto 0);
+
+  -- create a constrained string
+  function to_string(x: string) return string is
+      variable ret_val: string(1 to x'length);
+      alias lx : string (1 to x'length) is x;
+  begin  
+      ret_val := lx;
+      return(ret_val);
+  end to_string;
+
+  -- bit-vector to std-logic-vector and vice-versa
+  function to_std_logic_vector(x: bit_vector) return std_logic_vector is
+     alias lx: bit_vector(1 to x'length) is x;
+     variable ret_val: std_logic_vector(1 to x'length);
+  begin
+     for I in 1 to x'length loop
+        if(lx(I) = '1') then
+          ret_val(I) := '1';
+        else
+          ret_val(I) := '0';
+        end if;
+     end loop; 
+     return ret_val;
+  end to_std_logic_vector;
+
+  function to_bit_vector(x: std_logic_vector) return bit_vector is
+     alias lx: std_logic_vector(1 to x'length) is x;
+     variable ret_val: bit_vector(1 to x'length);
+  begin
+     for I in 1 to x'length loop
+        if(lx(I) = '1') then
+          ret_val(I) := '1';
+        else
+          ret_val(I) := '0';
+        end if;
+     end loop; 
+     return ret_val;
+  end to_bit_vector;
+
+begin
+  process 
+    variable err_flag : boolean := false;
+    File INFILE: text open read_mode is "TRACEFILE.txt";
+    FILE OUTFILE: text  open write_mode is "outputs.txt";
+
+    -- bit-vectors are read from the file.
+    variable input_vector_var: bit_vector (number_of_inputs-1 downto 0);
+    variable output_vector_var: bit_vector (number_of_outputs-1 downto 0);
+    variable output_mask_var: bit_vector (number_of_outputs-1 downto 0);
+
+    -- for comparison of output with expected-output
+    variable output_comp_var: std_logic_vector (number_of_outputs-1 downto 0);
+    constant ZZZZ : std_logic_vector(number_of_outputs-1 downto 0) := (others => '0');
+
+    -- for read/write.
+    variable INPUT_LINE: Line;
+    variable OUTPUT_LINE: Line;
+    variable LINE_COUNT: integer := 0;
+
+    
+  begin
+    while not endfile(INFILE) loop 
+	  -- will read a new line every 5ns, apply input,
+	  -- wait for 1 ns for circuit to settle.
+	  -- read output.
+
+
+          LINE_COUNT := LINE_COUNT + 1;
+
+
+	  -- read input at current time.
+	  readLine (INFILE, INPUT_LINE);
+          read (INPUT_LINE, input_vector_var);
+          read (INPUT_LINE, output_vector_var);
+          read (INPUT_LINE, output_mask_var);
+	
+	  -- apply input.
+          input_vector <= to_std_logic_vector(input_vector_var);
+
+	  -- wait for the circuit to settle 
+	  wait for 15 ns;
+
+	  -- check output.
+          output_comp_var := (to_std_logic_vector(output_mask_var) and 
+					(output_vector xor to_std_logic_vector(output_vector_var)));
+	  if (output_comp_var  /= ZZZZ) then
+             write(OUTPUT_LINE,to_string("ERROR: line "));
+             write(OUTPUT_LINE, LINE_COUNT);
+             writeline(OUTFILE, OUTPUT_LINE);
+             err_flag := true;
+          end if;
+
+          write(OUTPUT_LINE, to_bit_vector(input_vector));
+          write(OUTPUT_LINE, to_string(" "));
+          write(OUTPUT_LINE, to_bit_vector(output_vector));
+          writeline(OUTFILE, OUTPUT_LINE);
+
+	  -- advance time by 4 ns.
+	  wait for 4 ns;
+    end loop;
+
+    assert (err_flag) report "SUCCESS, all tests passed." severity note;
+    assert (not err_flag) report "FAILURE, some tests failed." severity error;
+
+    wait;
+  end process;
+
+  dut_instance: DUT 
+     	port map(input_vector => input_vector, output_vector => output_vector);
+
+end Behave;
+
+
+XOR_NOR.VHDL
+library ieee;
+use ieee.std_logic_1164.all;
+library work;
+use work.Gates.all;
+entity nor_xor is
+port(a,b: in std_logic; output: out std_logic );
+end nor_xor ;
+architecture struct of nor_xor is
+signal s1,s2,s3,s4 : std_logic;
+Begin
+g1: NOR_2 port map ( a, a, s1 );
+g2: Nor_2 port map ( b, b, s2 );
+g3: NOR_2 port map ( s1, s2, s3);
+g4: NOR_2 port map ( a, b, s4 );
+g5: NOR_2 port map ( s3, s4, output);
+end struct;
+  
+
+
