@@ -1,0 +1,2 @@
+some times it comes as tests failed - in that case see your netlists and compare with your diagram .
+  it might happen that the inputs in dut file need to be exchanged , for example a was 0 and b was 1 could have been a was 1 and b was 0.
